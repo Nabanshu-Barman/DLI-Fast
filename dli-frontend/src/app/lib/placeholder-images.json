@@ -1,0 +1,47 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "NVIDIA style technical background",
+      "imageUrl": "https://picsum.photos/seed/nv1/1920/1080",
+      "imageHint": "technology abstract"
+    },
+    {
+      "id": "course-1",
+      "description": "Deep Learning Fundamentals",
+      "imageUrl": "https://picsum.photos/seed/dl1/800/600",
+      "imageHint": "artificial intelligence"
+    },
+    {
+      "id": "course-2",
+      "description": "CUDA Programming",
+      "imageUrl": "https://picsum.photos/seed/dl2/800/600",
+      "imageHint": "coding computer"
+    },
+    {
+      "id": "course-3",
+      "description": "Computer Vision Basics",
+      "imageUrl": "https://picsum.photos/seed/dl3/800/600",
+      "imageHint": "eye digital"
+    },
+    {
+      "id": "course-4",
+      "description": "Natural Language Processing",
+      "imageUrl": "https://picsum.photos/seed/dl4/800/600",
+      "imageHint": "network connections"
+    },
+    {
+      "id": "course-5",
+      "description": "Robotics with Jetson",
+      "imageUrl": "https://picsum.photos/seed/dl5/800/600",
+      "imageHint": "robot arm"
+    },
+    {
+      "id": "course-6",
+      "description": "Generative AI Workshop",
+      "imageUrl": "https://picsum.photos/seed/dl6/800/600",
+      "imageHint": "creative machine"
+    }
+  ]
+}
