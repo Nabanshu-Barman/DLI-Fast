@@ -1,6 +1,6 @@
 const express = require('express');
 const { validateRequest } = require('../../middleware/validate');
-const { getCoursesQuerySchema } = require('./courses.schema');
+const { getCoursesQuerySchema } = require('./courses.validators');
 const { getCourses } = require('./courses.controller');
 
 const router = express.Router();
