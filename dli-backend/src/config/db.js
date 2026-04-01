@@ -116,6 +116,18 @@ function getDB() {
   return db;
 }
 
+/**
+ * @returns {import('mongodb').MongoClient}
+ * @throws {Error} If client not initialized
+ */
+function getClient() {
+  if (!client) {
+    throw new Error('MongoDB client not initialized. Call connectDB() first.');
+  }
+
+  return client;
+}
+
 async function closeDB(reason = 'manual shutdown') {
   if (shutdownPromise) {
     return shutdownPromise;
@@ -136,4 +148,4 @@ async function closeDB(reason = 'manual shutdown') {
   return shutdownPromise;
 }
 
-module.exports = { connectDB, getDB, closeDB };
+module.exports = { connectDB, getDB, getClient, closeDB };
