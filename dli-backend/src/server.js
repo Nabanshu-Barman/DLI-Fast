@@ -1,7 +1,10 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { connectDB, closeDB } = require('./config/db');
+const { initializeSchemas } = require('./config/initSchemas');
 
 const authRoutes = require('./modules/auth/auth.routes');
 const coursesRoutes = require('./modules/courses/courses.routes');
@@ -34,8 +37,9 @@ app.use((err, req, res, next) => {
 
 async function start() {
   try {
-    await connectDB();
+    const db = await connectDB();
     console.log('[DB] Connected to MongoDB');
+    await initializeSchemas(db);
 
     app.listen(PORT, () => {
       console.log(`[Server] Listening on port ${PORT}`);
@@ -45,15 +49,5 @@ async function start() {
     process.exit(1);
   }
 }
-
-process.on('SIGINT', async () => {
-  await closeDB();
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  await closeDB();
-  process.exit(0);
-});
 
 start();
