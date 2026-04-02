@@ -8,9 +8,11 @@ import { get } from '@/lib/apiClient';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { isLoggedIn, isAdmin, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +43,10 @@ export default function DashboardPage() {
       <Navbar 
         currentView="dashboard"
         onNavigate={(view) => router.push(`/${view === 'hero' ? '' : view}`)} 
-        isLoggedIn={true}
-        isAdmin={false}
+        isLoggedIn={isLoggedIn}
+        isAdmin={isAdmin}
         onLogout={() => {
-          localStorage.removeItem('dli_jwt');
+          logout();
           router.push('/');
         }}
       />

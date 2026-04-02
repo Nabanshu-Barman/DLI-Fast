@@ -8,9 +8,11 @@ import { get } from '@/lib/apiClient';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function CataloguePage() {
   const router = useRouter();
+  const { isLoggedIn, isAdmin, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<any[]>([]);
@@ -54,10 +56,10 @@ export default function CataloguePage() {
       <Navbar 
         currentView="catalogue"
         onNavigate={(view) => router.push(`/${view === 'hero' ? '' : view}`)} 
-        isLoggedIn={true}
-        isAdmin={false}
+        isLoggedIn={isLoggedIn}
+        isAdmin={isAdmin}
         onLogout={() => {
-          localStorage.removeItem('dli_jwt');
+          logout();
           router.push('/');
         }}
       />
