@@ -29,6 +29,10 @@ if (!process.env.FRONTEND_URL) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Required for Railway/Heroku/any reverse proxy — allows express-rate-limit
+// to read the real client IP from the X-Forwarded-For header instead of crashing.
+app.set('trust proxy', 1);
+
 // Apply security headers via helmet to mitigate common web vulnerabilities
 app.use(helmet());
 
