@@ -39,3 +39,4 @@ build/
 
 # Large media — video frames bloat the repo
 dli-frontend/public/frames/
+.vscode/
