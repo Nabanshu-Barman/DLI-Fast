@@ -5,7 +5,7 @@ const router = express.Router();
 const { body } = require("express-validator");
 const rateLimit = require("express-rate-limit");
 
-const { login, register } = require("../controllers/auth.controller");
+const { login, register, bootstrapAdmin } = require("../controllers/auth.controller");
 const { validateRequest } = require("../middleware/validate");
 
 /**
@@ -55,6 +55,27 @@ router.post(
   ],
   validateRequest,
   register,
+);
+
+/**
+ * POST /api/v1/auth/bootstrap-admin
+ * One-shot admin creation — only works when no admin exists and BOOTSTRAP_KEY matches.
+ * Call via curl, then delete BOOTSTRAP_KEY from env to permanently disable.
+ */
+router.post(
+  "/bootstrap-admin",
+  [
+    body("bootstrapKey", "Bootstrap key is required").notEmpty().isString(),
+    body("name", "Name is required").notEmpty().isString(),
+    body("email", "Invalid email format").isEmail(),
+    body("srmRegNo", "Registration number is required").notEmpty().isString(),
+    body("password", "Password must be at least 6 chars")
+      .notEmpty()
+      .isString()
+      .isLength({ min: 6 }),
+  ],
+  validateRequest,
+  bootstrapAdmin,
 );
 
 module.exports = router;

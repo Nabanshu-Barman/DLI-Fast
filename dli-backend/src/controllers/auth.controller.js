@@ -161,7 +161,82 @@ async function register(req, res) {
   }
 }
 
+/**
+ * One-shot admin bootstrap — creates the first admin account when none exists.
+ * Requires BOOTSTRAP_KEY env var to match the request body's bootstrapKey.
+ * Once an admin exists, this endpoint permanently returns 403.
+ * Remove BOOTSTRAP_KEY from env after use to fully disable.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+async function bootstrapAdmin(req, res) {
+  try {
+    const { bootstrapKey, name, email, srmRegNo, password } = req.body;
+
+    if (!process.env.BOOTSTRAP_KEY) {
+      return res.status(403).json({
+        success: false,
+        message: "Bootstrap is disabled (BOOTSTRAP_KEY not configured)",
+        code: "BOOTSTRAP_DISABLED",
+      });
+    }
+
+    if (bootstrapKey !== process.env.BOOTSTRAP_KEY) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid bootstrap key",
+        code: "INVALID_BOOTSTRAP_KEY",
+      });
+    }
+
+    const existingAdmin = await User.findOne({ role: "admin" });
+    if (existingAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "An admin account already exists. Bootstrap is locked.",
+        code: "ADMIN_EXISTS",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const admin = new User({
+      name,
+      email,
+      srmRegNo,
+      passwordHash,
+      role: "admin",
+      points: {
+        balance: toDecimal128(0),
+        totalEarned: toDecimal128(0),
+        totalSpent: toDecimal128(0),
+        negativeAccrued: toDecimal128(0),
+      },
+    });
+
+    await admin.save();
+
+    res.status(201).json({
+      success: true,
+      data: {
+        message: "Admin account created. Remove BOOTSTRAP_KEY from your environment to permanently disable this endpoint.",
+        user: serializeDocument(admin),
+      },
+    });
+  } catch (error) {
+    const isProduction = process.env.NODE_ENV === "production";
+    res.status(500).json({
+      success: false,
+      message: "Failed to bootstrap admin account.",
+      code: "INTERNAL_SERVER_ERROR",
+      ...(!isProduction && { details: error.stack || error.message }),
+    });
+  }
+}
+
 module.exports = {
   login,
   register,
+  bootstrapAdmin,
 };
