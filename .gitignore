@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.next/
+
+# Environment — never commit
+.env
+.env.local
+.env.production
+
+# Antigravity/IDE
+.agents/
+.agent/
+.idx/
+skills-lock.json
+
+# Temp/debug
+fix_*.js
+test_*.js
+req.js
+*.modified
+apphosting.yaml
+.git-backup/
+
+# Backend test/seed files (contain hardcoded creds)
+dli-backend/api.http
+dli-backend/seed.js
+dli-backend/tests/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Images folder (design screenshots, not needed in repo)
+images/
+
+# Build output
+dist/
+build/
+
+# Large media — video frames bloat the repo
+dli-frontend/public/frames/
