@@ -7,24 +7,60 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Users, Coins, Clock, CheckCircle2, XCircle, Plus } from 'lucide-react';
-import { MOCK_ADMIN_REQUESTS } from '@/lib/mock-data';
+import { Clock, CheckCircle2, XCircle, Plus, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { get, patch } from '@/lib/apiClient';
+
+interface PendingRequest {
+  _id: string;
+  requestedBy?: { _id: string; name: string; srmRegNo: string; points?: { balance: number } };
+  course?: { _id: string; title: string; pointsRequired: number; inventoryCount?: number };
+  userBalanceAtRequest?: number;
+  status: string;
+  requestedAt?: string;
+}
 
 export default function AdminView() {
   const [isLoading, setIsLoading] = useState(true);
-  const [requests, setRequests] = useState(MOCK_ADMIN_REQUESTS);
+  const [error, setError] = useState<string | null>(null);
+  const [requests, setRequests] = useState<PendingRequest[]>([]);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
+  const fetchRequests = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await get('/admin/requests?status=pending');
+      if (res?.success) {
+        setRequests(res.data || []);
+      } else {
+        throw new Error(res?.message || 'Failed to fetch pending requests');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An error occurred while fetching requests');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
+    fetchRequests();
   }, []);
 
-  const handleAction = (id: string, action: 'approve' | 'reject') => {
-    setRequests(prev => prev.filter(r => r.id !== id));
+  const handleAction = async (id: string, action: 'approved' | 'rejected') => {
+    try {
+      setProcessingId(id);
+      const res = await patch(`/admin/requests/${id}`, { action });
+      if (res?.success !== false) {
+        setRequests(prev => prev.filter(r => r._id !== id));
+      } else {
+        alert(res?.message || 'Failed to process request');
+      }
+    } catch (err: any) {
+      alert(err.message || 'An error occurred');
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   return (
@@ -34,11 +70,19 @@ export default function AdminView() {
         <p className="text-muted-foreground">Manage platform points, users, and course requests.</p>
       </div>
 
-      {/* Overview Stats */}
+      {/* Pending count stat */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard icon={<Users className="text-primary" />} label="Total Members" value="1,248" delta="+12%" />
-        <StatCard icon={<Coins className="text-primary" />} label="Points Issued" value="452.5k" delta="+5%" />
-        <StatCard icon={<Clock className="text-primary" />} label="Pending Requests" value={requests.length.toString()} delta="-2" />
+        <Card className="glass border-white/5">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Pending Requests</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg"><Clock className="text-primary" /></div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold font-headline mb-1">
+              {isLoading ? <Skeleton className="h-10 w-16" /> : requests.length}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -53,6 +97,12 @@ export default function AdminView() {
               <div className="space-y-4">
                 {Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                <AlertCircle className="w-10 h-10 text-destructive" />
+                <p className="text-destructive text-sm font-bold">{error}</p>
+                <Button onClick={fetchRequests} variant="outline" size="sm">Retry</Button>
+              </div>
             ) : requests.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -65,26 +115,29 @@ export default function AdminView() {
                 </TableHeader>
                 <TableBody>
                   {requests.map((request) => (
-                    <TableRow key={request.id} className="border-white/5 hover:bg-white/5">
-                      <TableCell className="font-medium text-xs truncate max-w-[120px]">{request.user}</TableCell>
-                      <TableCell>{request.course}</TableCell>
+                    <TableRow key={request._id} className="border-white/5 hover:bg-white/5">
+                      <TableCell className="font-medium text-xs truncate max-w-[120px]">
+                        {request.requestedBy?.name || 'Unknown'}
+                      </TableCell>
+                      <TableCell>{request.course?.title || 'Unknown Course'}</TableCell>
                       <TableCell>
-                        <span className={`font-bold ${request.balance >= request.points ? 'text-green-500' : 'text-red-500'}`}>
-                          {request.points}
+                        <span className="font-bold">
+                          {request.course?.pointsRequired || 0}
                         </span>
-                        <span className="text-xs text-muted-foreground ml-1">(Bal: {request.balance})</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <button 
-                            onClick={() => handleAction(request.id, 'approve')}
-                            className="p-1.5 rounded-full hover:bg-green-500/20 text-green-500 transition-colors"
+                            onClick={() => handleAction(request._id, 'approved')}
+                            disabled={processingId === request._id}
+                            className="p-1.5 rounded-full hover:bg-green-500/20 text-green-500 transition-colors disabled:opacity-50"
                           >
                             <CheckCircle2 className="w-5 h-5" />
                           </button>
                           <button 
-                            onClick={() => handleAction(request.id, 'reject')}
-                            className="p-1.5 rounded-full hover:bg-red-500/20 text-red-500 transition-colors"
+                            onClick={() => handleAction(request._id, 'rejected')}
+                            disabled={processingId === request._id}
+                            className="p-1.5 rounded-full hover:bg-red-500/20 text-red-500 transition-colors disabled:opacity-50"
                           >
                             <XCircle className="w-5 h-5" />
                           </button>
@@ -130,23 +183,5 @@ export default function AdminView() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function StatCard({ icon, label, value, delta }: { icon: React.ReactNode, label: string, value: string, delta: string }) {
-  const isPositive = delta.startsWith('+');
-  return (
-    <Card className="glass border-white/5">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{label}</CardTitle>
-        <div className="p-2 bg-primary/10 rounded-lg">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-4xl font-bold font-headline mb-1">{value}</div>
-        <div className={`text-xs font-bold ${isPositive ? 'text-green-500' : 'text-red-400'}`}>
-          {delta} <span className="text-muted-foreground font-normal">vs last month</span>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
