@@ -1,14 +1,28 @@
-function validateRequest(schema) {
-  return (req, res, next) => {
-    try {
-      if (schema.body) req.body = schema.body.parse(req.body);
-      if (schema.query) req.query = schema.query.parse(req.query);
-      if (schema.params) req.params = schema.params.parse(req.params);
-      next();
-    } catch (err) {
-      return res.status(400).json({ error: 'Validation failed', details: err.errors });
-    }
-  };
+const { validationResult } = require("express-validator");
+
+/**
+ * Standardized validation middleware wrapping `express-validator`.
+ * Evaluates the validation chain against `req` and short-circuits the request
+ * with a 400 response if any constraints fail. Ensures controllers only process
+ * sanitized data and never need to manually invoke `validationResult`.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ */
+function validateRequest(req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      message: "Validation failed",
+      code: "VALIDATION_ERROR",
+      errors: errors.array(),
+    });
+  }
+  next();
 }
 
-module.exports = { validateRequest };
+module.exports = {
+  validateRequest,
+};
